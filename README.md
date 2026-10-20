@@ -105,3 +105,7 @@ If the URL already has params, the generator is skipped and the experience start
 - Audio starts only after the first user tap (iOS requirement).
 - No network calls are made for the wish approval; it is simulated locally.
 - Stars are saved on this device only (max 20).
+
+---
+Built with vanilla HTML, CSS, and JavaScript. Deploy anywhere static hosting is supported.
+
