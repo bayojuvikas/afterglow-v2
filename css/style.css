@@ -1,0 +1,168 @@
+/* -- Design tokens --------------------------------------------- */
+:root {
+  --safe-t: env(safe-area-inset-top);
+  --safe-r: env(safe-area-inset-right);
+  --safe-b: env(safe-area-inset-bottom);
+  --safe-l: env(safe-area-inset-left);
+  --touch: 48px;
+  --body: 16px;
+  --radius: 18px;
+  --maxw: 430px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --glass-fill: rgba(255, 255, 255, 0.06);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.12);
+  --glass-blur: blur(16px);
+  --serif: Georgia, serif;
+  --sans: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --shadow-lg: 0 20px 40px rgba(0,0,0,0.45);
+}
+
+* { box-sizing: border-box; }
+html { overflow-y: scroll; -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: var(--body);
+  color: var(--text);
+  background: var(--bg1);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  width: 100%;
+  max-width: var(--maxw);
+  margin-left: auto;
+  margin-right: auto;
+  min-height: 100dvh;
+  min-height: 100vh;
+}
+input, textarea, select { font-size: 16px; font-family: inherit; }
+/* ── Palettes ────────────────────────────────────────────────── */
+:root[data-theme="rose"] { --bg1: #1a0f1a; --bg2: #2d1b3d; --bg3: #ff6b9d; --bg4: #c06c84; --accent: #ff6b9d; --accent-2: #ff8fab; --accent-dim: #d4507f; --candle-flame: #ffd93d; }
+:root[data-theme="midnight"] { --bg1: #07101b; --bg2: #0f2130; --bg3: #38bdf8; --bg4: #1e3a8a; --accent: #38bdf8; --accent-2: #60a5fa; --accent-dim: #1d4ed8; --candle-flame: #fbbf24; }
+:root[data-theme="royal"] { --bg1: #140b1d; --bg2: #2b1b3e; --bg3: #a855f7; --bg4: #7c3aed; --accent: #a855f7; --accent-2: #c084fc; --accent-dim: #7c3aed; --candle-flame: #fcd34d; }
+:root[data-theme="sunset"] { --bg1: #2d1a23; --bg2: #4a2c3a; --bg3: #f97316; --bg4: #ea580c; --accent: #f97316; --accent-2: #fb923c; --accent-dim: #c2410c; --candle-flame: #fbbf24; }
+:root[data-theme="forest"] { --bg1: #0f1b1a; --bg2: #1f2e30; --bg3: #4ade80; --bg4: #22c55e; --accent: #4ade80; --accent-2: #86efac; --accent-dim: #15803d; --candle-flame: #fcd34d; }
+:root[data-mode="dark"] { --surface: rgba(255,255,255,0.04); --text: #fff; --muted: rgba(255,255,255,0.6); --card: rgba(255,255,255,0.05); }
+:root[data-mode="light"] { --surface: rgba(0,0,0,0.04); --text: #0f172a; --muted: rgba(15,23,42,0.6); --card: rgba(0,0,0,0.03); }
+
+#bg-canvas, #fx-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; }
+
+#app { position: relative; z-index: 5; }
+.chroma { display: flex; justify-content: space-between; align-items: center; padding: max(12px, var(--safe-t)) max(12px, var(--safe-r)) 8px max(12px, var(--safe-l)); gap: 8px; }
+.chip { min-height: var(--touch); min-width: var(--touch); border-radius: 12px; border: var(--glass-border); background: var(--glass-fill); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); color: var(--text); font-size: 13px; padding: 0 12px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.chip:active { transform: scale(0.96); }
+
+.story-progress { height: 4px; background: rgba(255,255,255,0.08); margin: 0 max(12px, var(--safe-l)) 0 max(12px, var(--safe-r)); border-radius: 2px; overflow: hidden; }
+#progress-fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.4s var(--ease-out); }
+#progress-count { font-size: 12px; color: var(--muted); padding: 6px max(12px, var(--safe-l)) 6px max(12px, var(--safe-r)); }
+
+#stages > section { display: none; position: relative; min-height: 100dvh; min-height: 100vh; padding-bottom: max(80px, var(--safe-b)); }
+#stages > section.active { display: block; animation: stageFade 0.45s var(--ease-out); }
+@keyframes stageFade { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } 
+/* -- Generator ------------------------------------------------- */
+#stage-generator { padding: max(16px, var(--safe-t)) max(12px, var(--safe-l)) 12px max(12px, var(--safe-r)); }
+#gen-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+#gen-form label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+#gen-form input, #gen-form textarea, #gen-form select { background: var(--card); border: var(--glass-border); border-radius: 12px; color: var(--text); padding: 10px 12px; min-height: var(--touch); }
+#gen-msg { resize: vertical; min-height: 88px; }
+#gen-preview { margin-bottom: 14px; border-radius: var(--radius); border: var(--glass-border); background: var(--card); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); padding: 14px; min-height: var(--touch); }
+#gen-link { background: var(--card); border: var(--glass-border); border-radius: 12px; color: var(--text); padding: 10px 12px; min-height: var(--touch); margin-bottom: 10px; }
+#gen-go, #gen-copy { min-height: var(--touch); border-radius: 14px; border: none; background: var(--accent); color: #000; font-weight: 700; font-size: 15px; cursor: pointer; }
+
+/* -- Gift / key SVG ------------------------------------------- */
+.svg-hit { display: block; width: 100%; aspect-ratio: 1; margin: 16px auto 0; background: transparent; border: none; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.draw-svg { width: 100%; height: 100%; display: block; }
+.draw-svg .draw { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
+.draw-svg.gift-svg .draw:nth-child(1) { stroke: #d35400; stroke-width: 10; animation: draw 1.2s var(--ease-out) forwards; }
+.draw-svg.gift-svg .draw:nth-child(2) { stroke: #d35400; stroke-width: 8; animation: draw 1.2s var(--ease-out) 0.3s forwards; }
+.draw-svg.gift-svg .draw:nth-child(3) { stroke: #d35400; stroke-width: 8; animation: draw 1.2s var(--ease-out) 0.6s forwards; }
+.draw-svg.key-svg .draw { stroke: #b7950b; stroke-width: 6; animation: draw 1.2s var(--ease-out) forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+/* -- Storybook ------------------------------------------------- */
+#book-wrap { width: 100%; max-width: 340px; margin: 20px auto 0; perspective: 1000px; }
+#book { width: 100%; transform-style: preserve-3d; transform-origin: left center; transition: transform 0.6s var(--ease-out); position: relative; }
+.page { position: absolute; inset: 0; width: 100%; height: 100%; backface-visibility: hidden; border-radius: var(--radius); background: var(--card); border: var(--glass-border); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); padding: 18px; box-sizing: border-box; font-family: var(--serif); font-size: 17px; line-height: 1.55; color: var(--text); display: flex; align-items: center; justify-content: center; text-align: center; }
+.page.front { transform: rotateY(0deg); z-index: 2; }
+.page.back { transform: rotateY(-180deg); z-index: 1; }
+
+/* -- Cake ------------------------------------------------------ */
+#cake-display { width: 100%; max-width: 260px; margin: 10px auto 6px; position: relative; }
+.cake-slice { position: relative; width: 100%; border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-lg); }
+.cake-layer { height: 26px; background: linear-gradient(180deg, #d65a7a, #8e2a4c); }
+.cake-icing { height: 44px; background: var(--accent); position: relative; overflow: hidden; }
+.cake-drip { position: absolute; bottom: 0; width: 24px; height: 14px; background: var(--accent-2); border-radius: 50% 50% 0 0; animation: drip 2s ease-in-out infinite; }
+.cake-drip:nth-child(2) { left: 30%; animation-delay: 0.4s; }
+.cake-drip:nth-child(3) { left: 70%; animation-delay: 0.8s; }
+@keyframes drip { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(1.25); } }
+.cake-plate { width: 120%; height: 14px; margin: 6px auto -4px; background: #555; border-radius: 50%; filter: blur(3px); opacity: 0.55; }
+.candle { position: absolute; top: -30px; width: 6px; height: 30px; background: #ffd166; border-radius: 3px 3px 0 0; }
+.candle::after { content: ""; position: absolute; inset: -6px -6px 0 -6px; background: radial-gradient(#fff600, #ff9100, transparent 70%); border-radius: 50%; filter: blur(2px); opacity: 0.9; }
+.candle .flame { position: absolute; inset: -14px -6px -6px -6px; background: #ffd700; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; filter: blur(3px) brightness(1.4); animation: flicker 1.2s ease-in-out infinite alternate; }
+@keyframes flicker { from { transform: scale(1); opacity: 1; } to { transform: scale(0.92); opacity: 0.85; } }
+.candle.out .flame { display: none; }
+
+.balloon-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding-left: max(8px, var(--safe-l)); padding-right: max(8px, var(--safe-r)); margin: 10px 0 6px; }
+.balloon { width: 34px; height: 42px; background: var(--accent); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; position: relative; display: flex; align-items: flex-end; justify-content: center; color: #fff; font-weight: 700; font-size: 13px; animation: float 4s ease-in-out infinite; }
+.balloon::after { content: ""; position: absolute; bottom: -10px; left: 50%; width: 2px; height: 10px; background: var(--muted); transform: translateX(-50%); }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+#cake-continue { min-height: var(--touch); border-radius: 14px; border: none; background: var(--accent); color: #000; font-weight: 700; font-size: 15px; margin-top: 6px; cursor: pointer; }
+
+/* -- Blow ------------------------------------------------------ */
+#blow-prompt { text-align: center; font-size: 17px; margin: 10px 12px 6px; font-weight: 600; }
+#blow-display { width: 100%; max-width: 280px; margin: 0 auto 8px; display: flex; gap: 10px; justify-content: center; }
+#blow-hint { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+#blow-btn { width: 100%; min-height: var(--touch); border-radius: 16px; border: none; background: var(--accent); color: #000; font-weight: 700; font-size: 16px; margin: 0 12px 10px; cursor: pointer; }
+/* ── Generator ───────────────────────────────────────────────── */
+#stage-generator { padding: max(16px, var(--safe-t)) max(12px, var(--safe-l)) 12px max(12px, var(--safe-r)); }
+#gen-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+#gen-form label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+#gen-form input, #gen-form textarea, #gen-form select { background: var(--card); border: var(--glass-border); border-radius: 12px; color: var(--text); padding: 10px 12px; min-height: var(--touch); }
+#gen-msg { resize: vertical; min-height: 88px; }
+#gen-preview { margin-bottom: 14px; border-radius: var(--radius); border: var(--glass-border); background: var(--card); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); padding: 14px; min-height: var(--touch); }
+#gen-link { background: var(--card); border: var(--glass-border); border-radius: 12px; color: var(--text); padding: 10px 12px; min-height: var(--touch); margin-bottom: 10px; }
+#gen-go, #gen-copy { min-height: var(--touch); border-radius: 14px; border: none; background: var(--accent); color: #000; font-weight: 700; font-size: 15px; cursor: pointer; }
+
+/* ── Gift / key SVG ─────────────────────────────────────────── */
+.svg-hit { display: block; width: 100%; aspect-ratio: 1; margin: 16px auto 0; background: transparent; border: none; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.draw-svg { width: 100%; height: 100%; display: block; }
+.draw-svg .draw { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
+.draw-svg.gift-svg .draw:nth-child(1) { stroke: #d35400; stroke-width: 10; animation: draw 1.2s var(--ease-out) forwards; }
+.draw-svg.gift-svg .draw:nth-child(2) { stroke: #d35400; stroke-width: 8; animation: draw 1.2s var(--ease-out) 0.3s forwards; }
+.draw-svg.gift-svg .draw:nth-child(3) { stroke: #d35400; stroke-width: 8; animation: draw 1.2s var(--ease-out) 0.6s forwards; }
+.draw-svg.key-svg .draw { stroke: #b7950b; stroke-width: 6; animation: draw 1.2s var(--ease-out) forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+/* ── Storybook ───────────────────────────────────────────────── */
+#book-wrap { width: 100%; max-width: 340px; margin: 20px auto 0; perspective: 1000px; }
+#book { width: 100%; transform-style: preserve-3d; transform-origin: left center; transition: transform 0.6s var(--ease-out); position: relative; }
+.page { position: absolute; inset: 0; width: 100%; height: 100%; backface-visibility: hidden; border-radius: var(--radius); background: var(--card); border: var(--glass-border); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); padding: 18px; box-sizing: border-box; font-family: var(--serif); font-size: 17px; line-height: 1.55; color: var(--text); display: flex; align-items: center; justify-content: center; text-align: center; }
+.page.front { transform: rotateY(0deg); z-index: 2; }
+.page.back { transform: rotateY(-180deg); z-index: 1; }
+
+/* ── Cake ────────────────────────────────────────────────────── */
+#cake-display { width: 100%; max-width: 260px; margin: 10px auto 6px; position: relative; }
+.cake-slice { position: relative; width: 100%; border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-lg); }
+.cake-layer { height: 26px; background: linear-gradient(180deg, #d65a7a, #8e2a4c); }
+.cake-icing { height: 44px; background: var(--accent); position: relative; overflow: hidden; }
+.cake-drip { position: absolute; bottom: 0; width: 24px; height: 14px; background: var(--accent-2); border-radius: 50% 50% 0 0; animation: drip 2s ease-in-out infinite; }
+.cake-drip:nth-child(2) { left: 30%; animation-delay: 0.4s; }
+.cake-drip:nth-child(3) { left: 70%; animation-delay: 0.8s; }
+@keyframes drip { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(1.25); } }
+.cake-plate { width: 120%; height: 14px; margin: 6px auto -4px; background: #555; border-radius: 50%; filter: blur(3px); opacity: 0.55; }
+.candle { position: absolute; top: -30px; width: 6px; height: 30px; background: #ffd166; border-radius: 3px 3px 0 0; }
+.candle::after { content: ""; position: absolute; inset: -6px -6px 0 -6px; background: radial-gradient(#fff600, #ff9100, transparent 70%); border-radius: 50%; filter: blur(2px); opacity: 0.9; }
+.candle .flame { position: absolute; inset: -14px -6px -6px -6px; background: #ffd700; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; filter: blur(3px) brightness(1.4); animation: flicker 1.2s ease-in-out infinite alternate; }
+@keyframes flicker { from { transform: scale(1); opacity: 1; } to { transform: scale(0.92); opacity: 0.85; } }
+.candle.out .flame { display: none; }
+
+.balloon-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding-left: max(8px, var(--safe-l)); padding-right: max(8px, var(--safe-r)); margin: 10px 0 6px; }
+.balloon { width: 34px; height: 42px; background: var(--accent); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; position: relative; display: flex; align-items: flex-end; justify-content: center; color: #fff; font-weight: 700; font-size: 13px; animation: float 4s ease-in-out infinite; }
+.balloon::after { content: ""; position: absolute; bottom: -10px; left: 50%; width: 2px; height: 10px; background: var(--muted); transform: translateX(-50%); }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+#cake-continue { min-height: var(--touch); border-radius: 14px; border: none; background: var(--accent); color: #000; font-weight: 700; font-size: 15px; margin-top: 6px; cursor: pointer; }
+
+/* ── Blow ────────────────────────────────────────────────────── */
+#blow-prompt { text-align: center; font-size: 17px; margin: 10px 12px 6px; font-weight: 600; }
+#blow-display { width: 100%; max-width: 280px; margin: 0 auto 8px; display: flex; gap: 10px; justify-content: center; }
+#blow-hint { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+#blow-btn { width: 100%; min-height: var(--touch); border-radius: 16px; border: none; background: var(--accent); color: #000; font-weight: 700; font-size: 16px; margin: 0 12px 10px; cursor: pointer; }
