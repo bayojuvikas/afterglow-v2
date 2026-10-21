@@ -217,7 +217,7 @@ function decodeBase64(value) {
  * Decode the ?d= share payload into a plain object.
  * Any failure (bad base64, bad JSON, oversized payload) yields {}.
  */
-function decodePayload(raw) {
+export function decodePayload(raw) {
   if (!raw) return {};
   const text = String(raw).trim();
   if (!text) return {};
@@ -284,7 +284,32 @@ export function parseParams(defaults = {}) {
     params.has(key)
   );
 
-  return { name, from, message, dob, theme, hasQuery };
+  const extras = {};
+  if (payload && typeof payload === "object") {
+    if (Array.isArray(payload.pages)) {
+      extras.pages = payload.pages
+        .map((p) => clampText(p, LIMITS.page))
+        .filter((p) => p.length > 0)
+        .slice(0, 20);
+    }
+    if (Array.isArray(payload.favorites)) {
+      extras.favorites = payload.favorites.slice(0, 20).map((f) => ({
+        label: clampText(f && f.label, LIMITS.favoriteLabel),
+        text: clampText(f && f.text, LIMITS.favoriteText),
+      }));
+    }
+    if (Array.isArray(payload.timeline)) {
+      extras.timeline = payload.timeline.slice(0, 20).map((t) => ({
+        date: clampText(t && t.date, LIMITS.timelineDate),
+        title: clampText(t && t.title, LIMITS.timelineTitle),
+        text: clampText(t && t.text, LIMITS.timelineText),
+      }));
+    }
+    const finalWish = clampText(payload.finalWish, LIMITS.finalWish);
+    if (finalWish) extras.finalWish = finalWish;
+  }
+
+  return { name, from, message, dob, theme, hasQuery, ...extras };
 }
 
 /** True when the URL carries any personalisation (plain params or payload). */
@@ -311,6 +336,27 @@ export function buildShareUrl(data = {}) {
     msg: clampText(source.message ?? source.msg, LIMITS.message),
     dob: validDob(source.dob),
     theme: validTheme(source.theme, "rose"),
+    ...(Array.isArray(source.pages)
+      ? { pages: source.pages.map((p) => clampText(p, LIMITS.page)).filter((p) => p.length > 0).slice(0, 20) }
+      : {}),
+    ...(Array.isArray(source.favorites)
+      ? {
+          favorites: source.favorites.slice(0, 20).map((f) => ({
+            label: clampText(f && f.label, LIMITS.favoriteLabel),
+            text: clampText(f && f.text, LIMITS.favoriteText),
+          })),
+        }
+      : {}),
+    ...(Array.isArray(source.timeline)
+      ? {
+          timeline: source.timeline.slice(0, 20).map((t) => ({
+            date: clampText(t && t.date, LIMITS.timelineDate),
+            title: clampText(t && t.title, LIMITS.timelineTitle),
+            text: clampText(t && t.text, LIMITS.timelineText),
+          })),
+        }
+      : {}),
+    ...(source.finalWish ? { finalWish: clampText(source.finalWish, LIMITS.finalWish) } : {}),
   };
   url.searchParams.set("d", encodeBase64(JSON.stringify(payload)));
   return url.toString();

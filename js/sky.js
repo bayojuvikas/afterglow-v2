@@ -43,7 +43,7 @@ function randBetween(min, max) {
   return Math.random() * (max - min) + min;
 }
 
-export function mountSky({ onTick } = {}) {
+export function mountSky({ onTick, onContinue, container } = {}) {
   let canvas = null;
   let ctx = null;
   let rafId = null;
@@ -74,6 +74,8 @@ export function mountSky({ onTick } = {}) {
   let reduced = reducedMotion();
   let keyboardOffset = 0;
   let tickCallback = typeof onTick === 'function' ? onTick : () => {};
+  let continueEl = null;
+  let continueCallback = typeof onContinue === 'function' ? onContinue : null;
 
   function loadWishes() {
     try {
@@ -117,21 +119,18 @@ export function mountSky({ onTick } = {}) {
   }
 
   function ensureCanvas() {
-    if (canvas) return;
-    canvas = qs('#sky-canvas');
-    if (!canvas) {
-      canvas = document.createElement('canvas');
-      canvas.id = 'sky-canvas';
-      canvas.className = 'sky-canvas';
-      canvas.style.position = 'absolute';
-      canvas.style.top = '0';
-      canvas.style.left = '0';
-      canvas.style.width = '100%';
-      canvas.style.height = '100%';
-      canvas.style.pointerEvents = 'none';
-      const root = qs('.sky-root') || document.body;
-      root.appendChild(canvas);
-    }
+    const existing = qs('#sky-canvas');
+    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+    canvas = document.createElement('canvas');
+    canvas.id = 'sky-canvas';
+    canvas.className = 'sky-canvas';
+    canvas.style.position = 'absolute';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.pointerEvents = 'none';
+    (container || document.body).appendChild(canvas);
     ctx = canvas.getContext('2d');
     resize();
   }
@@ -402,6 +401,7 @@ export function mountSky({ onTick } = {}) {
       reviewTimer = setTimeout(() => {
         setMode('approved');
         setStatus('Your wish has been approved. It\'s shining now.');
+    if (continueEl) continueEl.style.display = 'block';
         if (typeof sparkle === 'function') sparkle();
         clearTimers();
       }, 2500);
@@ -582,6 +582,7 @@ export function mountSky({ onTick } = {}) {
       reviewTimer = setTimeout(() => {
         setMode('approved');
         setStatus('Your wish has been approved. It\'s shining now.');
+    if (continueEl) continueEl.style.display = 'block';
         if (typeof sparkle === 'function') sparkle();
       }, 2500);
     } else {
@@ -654,7 +655,7 @@ export function mountSky({ onTick } = {}) {
     textarea.rows = 2;
     textarea.placeholder = 'Make a wish. The universe is listening.';
     textarea.setAttribute('aria-label', 'Make a wish. The universe is listening.');
-    textarea.maxLength = (LIMITS && LIMITS.wishMax) || 140;
+    textarea.maxLength = (LIMITS && LIMITS.wish) || 140;
     textarea.style.position = 'fixed';
     textarea.style.left = '50%';
     textarea.style.transform = 'translateX(-50%)';
@@ -802,6 +803,31 @@ export function mountSky({ onTick } = {}) {
     sheetClose.style.pointerEvents = 'auto';
     sheetClose.style.touchAction = 'manipulation';
 
+    // continue button
+    continueEl = document.createElement('button');
+    continueEl.className = 'sky-continue';
+    continueEl.type = 'button';
+    continueEl.textContent = 'Continue';
+    continueEl.style.display = 'none';
+    continueEl.style.position = 'fixed';
+    continueEl.style.left = '50%';
+    continueEl.style.transform = 'translateX(-50%)';
+    continueEl.style.width = 'calc(100% - 32px)';
+    continueEl.style.maxWidth = '420px';
+    continueEl.style.bottom = 'calc(env(safe-area-inset-bottom, 0px) + 14px)';
+    continueEl.style.zIndex = '30';
+    continueEl.style.minHeight = '48px';
+    continueEl.style.borderRadius = '16px';
+    continueEl.style.border = 'none';
+    continueEl.style.fontSize = '16px';
+    continueEl.style.fontWeight = '700';
+    continueEl.style.cursor = 'pointer';
+    continueEl.style.pointerEvents = 'auto';
+    continueEl.style.touchAction = 'manipulation';
+    continueEl.addEventListener('click', () => {
+      if (continueCallback) continueCallback();
+    });
+
     actions.appendChild(sheetDelete);
     actions.appendChild(sheetClose);
     sheet.appendChild(sheetText);
@@ -812,8 +838,9 @@ export function mountSky({ onTick } = {}) {
     root.appendChild(sendBtn);
     root.appendChild(statusEl);
     root.appendChild(footerEl);
-    document.body.appendChild(root);
-    document.body.appendChild(sheet);
+    root.appendChild(continueEl);
+    (container || document.body).appendChild(root);
+    (container || document.body).appendChild(sheet);
 
     // events
     textarea.addEventListener('input', updateCounter, { passive: true });
@@ -870,6 +897,7 @@ export function mountSky({ onTick } = {}) {
     }
     const root = qs('.sky-root');
     if (root && root.parentNode) root.parentNode.removeChild(root);
+    continueEl = null;
     if (sheet && sheet.parentNode) sheet.parentNode.removeChild(sheet);
     if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
     canvas = null;

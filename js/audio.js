@@ -1,5 +1,5 @@
 /**
- * audio.js — Web Audio synthesis for the Afterglow birthday experience.
+ * audio.js - Web Audio synthesis for the Afterglow birthday experience.
  *
  * Synthesizes "Happy Birthday" from a note-sequence array with an ADSR gain
  * envelope. SFX are short synthesized bursts. Music only starts after a user
