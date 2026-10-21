@@ -190,7 +190,7 @@ export function blowController(candles, { onAllOut, prompt, hint }) {
       analyser.fftSize = 256;
       src.connect(analyser);
     } catch (err) {
-      setText(prompt, "Mic unavailable — tap the flames instead.");
+      setText(prompt, "Mic unavailable - tap the flames instead.");
       setText(hint, "Tap each flame to blow it out.");
       btn.style.display = "none";
       for (const c of candles) {
