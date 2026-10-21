@@ -1,45 +1,61 @@
 import { config, THEMES, LIMITS, STAGE_LIST } from "./config.js";
 import {
-  reducedMotion, isLowPower, clampText, validTheme, validDob,
+  reducedMotion, clampText, validTheme, validDob,
   parseParams, buildShareUrl, storageGet, storageSet, storageRemove,
-  ageParts, qs, qsa, setText, createEl, vibrate, toast, copyText,
-  pad2, sleep
+  ageParts, qs, qsa, setText, createEl, vibrate, toast
 } from "./util.js";
-import { initAudio, playChime, playTapCut, playSparkle, playSwell, setMute, toggleMute, musicReady } from "./audio.js";
-import { initFx, celebrate, confetti, firework, crumbs } from "./fx.js";
+import {
+  unlock as unlockAudioCtx, startMusic, stopMusic, attachOptionalTrack,
+  chime, tapCut, sparkle, swell, pop, isMuted, setMuted, toggleMute
+} from "./audio.js";
+import { initFx, celebrate, confetti, firework } from "./fx.js";
 import { mountBook } from "./book.js";
 import { mountDisplayCake, fillBalloons, mountCutter, blowController } from "./cake.js";
 import { mountSky } from "./sky.js";
 
 const STAGES = STAGE_LIST;
-let stageIdx = 0;
+const CONTENT_KEY = "afterglow_content";
+const MODE_KEY = "afterglow_mode";
+const GEN_INDEX = 0;
+
+let stageIndex = 0;
 let content = { ...config };
-let audioStarted = false;
-let rafId = null;
-let lastTime = 0;
-let ageInterval = null;
+let audioReady = false;
+let bookCleanup = null;
+let skyCleanup = null;
+let cutCtl = null;
+let ageTimer = null;
+let typeTimer = null;
 
 const els = {
-  app: qs("#app"), stages: qs("#stages"), progressFill: qs("#progress-fill"),
-  progressCount: qs("#progress-count"), muteBtn: qs("#mute-btn"),
-  themeBtn: qs("#theme-btn"), modeBtn: qs("#mode-btn"), skipBtn: qs("#skip-btn"),
-  loader: qs("#loader"), rotateGate: qs("#rotate-gate"),
+  app: qs("#app"),
+  stages: qs("#stages"),
+  progressFill: qs("#progress-fill"),
+  progressCount: qs("#progress-count"),
+  muteBtn: qs("#mute-btn"),
+  themeBtn: qs("#theme-btn"),
+  modeBtn: qs("#mode-btn"),
+  skipBtn: qs("#skip-btn"),
+  loader: qs("#loader"),
 };
 
-function setStage(i) {
-  stageIdx = i;
-  qsa("#stages > section").forEach(s => s.classList.remove("active"));
-  const s = qs(`#stage-${STAGES[i]}`);
-  if (s) s.classList.add("active");
+/* ---------------- stage machine ---------------- */
+
+function showStage(i) {
+  if (i < 0 || i >= STAGES.length) return;
+  stageIndex = i;
+  qsa("#stages > section").forEach((s) => s.classList.remove("active"));
+  const section = qs("#stage-" + STAGES[i]);
+  if (section) section.classList.add("active");
   const pct = ((i + 1) / STAGES.length) * 100;
-  els.progressFill.style.width = `${pct}%`;
-  setText(els.progressCount, `${i + 1} / ${STAGES.length}`);
-  playChime();
+  if (els.progressFill) els.progressFill.style.width = pct + "%";
+  setText(els.progressCount, (i + 1) + " / " + STAGES.length);
+  window.scrollTo(0, 0);
 }
 
 function go(i) {
-  if (i < 0 || i >= STAGES.length) return;
-  setStage(i);
+  showStage(i);
+  chime();
   setupStage(STAGES[i]);
 }
 
@@ -56,438 +72,451 @@ function setupStage(name) {
     case "message": setupMessage(); break;
     case "wish": setupWish(); break;
     case "finale": setupFinale(); break;
+    default: break;
   }
 }
 
-function unlockAudio() {
-  if (audioStarted) return;
-  audioStarted = true;
-  initAudio().catch(() => {});
+function leaveStage(name) {
+  if (name === "storybook" && bookCleanup) { bookCleanup(); bookCleanup = null; }
+  if (name === "wish" && skyCleanup) { skyCleanup(); skyCleanup = null; }
+  if (name === "message" && ageTimer) { clearInterval(ageTimer); ageTimer = null; }
 }
 
-function onFirstTap() {
-  unlockAudio();
+/* ---------------- audio / chrome ---------------- */
+
+function ensureAudio() {
+  if (audioReady) return;
+  audioReady = true;
+  unlockAudioCtx().then(() => {
+    if (content.musicSrc) attachOptionalTrack(content.musicSrc);
+    startMusic();
+  }).catch(() => {});
   if (els.loader) els.loader.style.display = "none";
 }
 
-els.app.addEventListener("pointerdown", onFirstTap, { once: true, passive: true });
-els.skipBtn.addEventListener("click", () => go(STAGES.length - 1));
-function setupGenerator() {
-  const nameInp = qs("#gen-name"), fromInp = qs("#gen-from"), msgInp = qs("#gen-msg");
-  const themeSel = qs("#gen-theme"), dobInp = qs("#gen-dob");
-  const preview = qs("#gen-preview"), linkInp = qs("#gen-link");
-  const goBtn = qs("#gen-go"), copyBtn = qs("#gen-copy");
+function applyTheme() {
+  document.documentElement.setAttribute("data-theme", content.theme || "rose");
+  const mode = storageGet(MODE_KEY, "dark");
+  document.documentElement.setAttribute("data-mode", mode);
+  if (els.themeBtn) setText(els.themeBtn, "Theme");
+  if (els.modeBtn) setText(els.modeBtn, "Mode");
+}
 
-  THEMES.forEach(t => {
-    const o = document.createElement("option");
-    o.value = t; setText(o, t.charAt(0).toUpperCase() + t.slice(1));
-    themeSel.appendChild(o);
+function syncMuteButton() {
+  if (els.muteBtn) setText(els.muteBtn, isMuted() ? "Unmute" : "Mute");
+}
+
+if (els.muteBtn) {
+  els.muteBtn.addEventListener("click", () => {
+    toggleMute();
+    syncMuteButton();
+    pop();
   });
-  themeSel.value = content.theme || "rose";
+}
 
-  function updatePreview() {
-    const n = clampText(nameInp.value, LIMITS.name) || "Alex";
-    const f = clampText(fromInp.value, LIMITS.from) || "Someone";
+if (els.themeBtn) {
+  els.themeBtn.addEventListener("click", () => {
+    const idx = THEMES.indexOf(content.theme);
+    content.theme = THEMES[(idx + 1) % THEMES.length];
+    storageSet(CONTENT_KEY, content);
+    applyTheme();
+  });
+}
+
+if (els.modeBtn) {
+  els.modeBtn.addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-mode") || "dark";
+    const next = current === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-mode", next);
+    storageSet(MODE_KEY, next);
+  });
+}
+
+if (els.skipBtn) {
+  els.skipBtn.addEventListener("click", () => go(STAGES.length - 1));
+}
+
+if (els.app) {
+  els.app.addEventListener("pointerdown", () => ensureAudio(), { once: true, passive: true });
+}
+
+/* ---------------- stage 0: generator ---------------- */
+
+function setupGenerator() {
+  const nameInp = qs("#gen-name");
+  const fromInp = qs("#gen-from");
+  const msgInp = qs("#gen-msg");
+  const themeSel = qs("#gen-theme");
+  const dobInp = qs("#gen-dob");
+  const preview = qs("#gen-preview");
+  const goBtn = qs("#gen-go");
+  const copyBtn = qs("#gen-copy");
+
+  if (!nameInp) return;
+
+  if (nameInp.value !== content.name) nameInp.value = content.name || "";
+  if (fromInp.value !== content.from) fromInp.value = content.from || "";
+  if (msgInp.value !== content.message) msgInp.value = content.message || "";
+  if (themeSel) themeSel.value = validTheme(content.theme);
+  if (dobInp && content.dob) dobInp.value = content.dob;
+
+  function refresh() {
+    if (!preview) return;
+    const n = clampText(nameInp.value, LIMITS.name) || "Recipient";
+    const f = clampText(fromInp.value, LIMITS.from) || "Sender";
     const m = clampText(msgInp.value, LIMITS.message) || "Happy Birthday!";
-    setText(preview, `For ${n}\nfrom ${f}\n“${m}”`);
+    setText(preview, "For " + n + " from " + f + " - " + m);
   }
 
-  [nameInp, fromInp, msgInp, dobInp].forEach(inp => inp.addEventListener("input", updatePreview));
-  themeSel.addEventListener("change", () => { content.theme = themeSel.value; updatePreview(); });
-
-  updatePreview();
-
-  goBtn.addEventListener("click", () => {
-    const n = clampText(nameInp.value, LIMITS.name) || "Alex";
-    const f = clampText(fromInp.value, LIMITS.from) || "Someone";
-    const m = clampText(msgInp.value, LIMITS.message) || "Happy Birthday!";
-    const t = validTheme(themeSel.value) ? themeSel.value : "rose";
-    const d = validDob(dobInp.value) ? dobInp.value : "";
-
-    content = { ...config, name: n, from: f, message: m, dob: d, theme: t };
-    storageSet("birthday-content", content);
-
-    const url = buildShareUrl(location.origin + location.pathname, { name: n, from: f, msg: m, dob: d, theme: t });
-    setText(linkInp, url);
-    linkInp.style.display = "block";
-    copyBtn.style.display = "inline-block";
-
-    go(0);
+  [nameInp, fromInp, msgInp, dobInp].forEach((el) => {
+    if (el) el.addEventListener("input", refresh);
   });
+  if (themeSel) themeSel.addEventListener("change", refresh);
+  refresh();
 
-  copyBtn.addEventListener("click", async () => {
-    const url = linkInp.value;
-    try { await navigator.clipboard.writeText(url); toast("Link copied"); }
-    catch { linkInp.select(); document.execCommand("copy"); toast("Link copied"); }
-  });
+  function collect() {
+    const t = themeSel ? validTheme(themeSel.value) : "rose";
+    const d = dobInp ? validDob(dobInp.value) : "";
+    return {
+      name: clampText(nameInp.value, LIMITS.name) || "Recipient",
+      from: clampText(fromInp.value, LIMITS.from) || "Sender",
+      message: clampText(msgInp.value, LIMITS.message) || "Happy Birthday!",
+      dob: d,
+      theme: t,
+    };
+  }
+
+  if (goBtn) {
+    goBtn.addEventListener("click", () => {
+      const next = collect();
+      content = { ...config, ...next, pages: content.pages, favorites: content.favorites, timeline: content.timeline, finalWish: content.finalWish };
+      storageSet(CONTENT_KEY, content);
+      applyTheme();
+      go(GEN_INDEX + 1);
+    });
+  }
+
+  if (copyBtn) {
+    copyBtn.addEventListener("click", async () => {
+      const next = collect();
+      const url = buildShareUrl({
+        name: next.name, from: next.from, message: next.message,
+        dob: next.dob, theme: next.theme,
+        pages: content.pages, favorites: content.favorites,
+        timeline: content.timeline, finalWish: content.finalWish,
+      });
+      try {
+        await navigator.clipboard.writeText(url);
+        toast("Link copied");
+      } catch (err) {
+        toast("Copy failed - link is in the address bar");
+      }
+    });
+  }
 }
 
-function applyTheme() {
-  document.documentElement.setAttribute("data-theme", content.theme);
-  const mode = storageGet("birthday-mode", "dark");
-  document.documentElement.setAttribute("data-mode", mode);
-  setText(els.themeBtn, `Theme: ${content.theme.charAt(0).toUpperCase() + content.theme.slice(1)}`);
-  setText(els.modeBtn, `Mode: ${mode.charAt(0).toUpperCase() + mode.slice(1)}`);
-}
+/* ---------------- stage 1: gift ---------------- */
 
-els.themeBtn.addEventListener("click", () => {
-  const idx = THEMES.indexOf(content.theme);
-  content.theme = THEMES[(idx + 1) % THEMES.length];
-  storageSet("birthday-content", content);
-  applyTheme();
-});
-
-els.modeBtn.addEventListener("click", () => {
-  const mode = document.documentElement.getAttribute("data-mode") === "dark" ? "light" : "dark";
-  document.documentElement.setAttribute("data-mode", mode);
-  storageSet("birthday-mode", mode);
-  setText(els.modeBtn, `Mode: ${mode.charAt(0).toUpperCase() + mode.slice(1)}`);
-});
 function setupGift() {
   const hit = qs("#gift-hit");
+  if (!hit) return;
   hit.addEventListener("click", () => {
-    playSparkle();
-    setTimeout(() => go(1), 700);
+    sparkle();
+    setTimeout(() => go(2), 650);
   }, { once: true });
 }
+
+/* ---------------- stage 2: key ---------------- */
 
 function setupKey() {
   const hit = qs("#key-hit");
+  if (!hit) return;
   hit.addEventListener("click", () => {
-    playChime();
-    setTimeout(() => go(2), 700);
+    sparkle();
+    setTimeout(() => go(3), 650);
   }, { once: true });
 }
 
+/* ---------------- stage 3: storybook ---------------- */
+
 function setupStorybook() {
   const book = qs("#book");
-  const texts = content.pages.map(p => clampText(p, LIMITS.page));
-  let pageIdx = 0;
-  let timer = null;
-
-  function render() {
-    book.innerHTML = "";
-    const front = document.createElement("div");
-    front.className = "page front";
-    setText(front, texts[pageIdx] || texts[0]);
-    const back = document.createElement("div");
-    back.className = "page back";
-    setText(back, texts[Math.min(pageIdx + 1, texts.length - 1)] || texts[texts.length - 1]);
-    book.appendChild(front);
-    book.appendChild(back);
-  }
-
-  function nextPage() {
-    pageIdx++;
-    if (pageIdx >= texts.length - 1) {
-      book.style.transform = "rotateY(-180deg)";
-      clearTimeout(timer);
-      setTimeout(() => go(3), 700);
-      return;
-    }
-    render();
-    book.style.transform = `rotateY(${-pageIdx * 45}deg)`;
-  }
-
-  render();
-  book.addEventListener("click", () => { clearTimeout(timer); nextPage(); }, { once: false });
-
-  timer = setInterval(nextPage, 4000);
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) clearTimeout(timer);
+  if (!book) return;
+  const texts = (content.pages || []).map((p) => clampText(p, LIMITS.page)).filter(Boolean);
+  if (!texts.length) return;
+  if (bookCleanup) bookCleanup();
+  bookCleanup = mountBook(book, texts, () => {
+    setTimeout(() => go(4), 500);
   });
 }
-let cakeCandles = null;
+
+/* ---------------- stage 4: cake ---------------- */
+
 function setupCake() {
   const slot = qs("#cake-display");
   const row = qs("#balloon-row");
-  fillBalloons(row, content.name);
-  cakeCandles = mountDisplayCake(slot, true);
-  qs("#cake-continue").addEventListener("click", () => go(4), { once: true });
+  if (row) fillBalloons(row, content.name || "You");
+  if (slot) mountDisplayCake(slot, true);
+  const btn = qs("#cake-continue");
+  if (btn) btn.addEventListener("click", () => go(5), { once: true });
 }
 
-let blowCtrl = null;
+/* ---------------- stage 5: blow ---------------- */
+
 function setupBlow() {
   const display = qs("#blow-display");
+  if (!display) return;
   display.innerHTML = "";
   const candles = mountDisplayCake(display, true);
   const prompt = qs("#blow-prompt");
   const hint = qs("#blow-hint");
-  blowCtrl = blowController(candles, {
-    onAllOut: () => go(5),
-    prompt, hint
+  const btn = qs("#blow-btn");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      setText(prompt, "Blow into your phone...");
+      setText(hint, "Hold a steady breath toward the flames");
+    }, { once: true });
+  }
+  blowController(candles, {
+    onAllOut: () => go(6),
+    prompt: prompt,
+    hint: hint,
   });
 }
 
-let cutter = null;
+/* ---------------- stage 6: cut ---------------- */
+
 function setupCut() {
   const world = qs("#cake-world");
   const canvas = qs("#cut-canvas");
   const hint = qs("#cut-hint");
   const done = qs("#cut-done");
+  if (!world || !canvas) return;
 
   world.innerHTML = "";
-  const cake = document.createElement("div");
-  cake.className = "cake-piece";
+  const cake = createEl("div", "cake-piece");
   cake.style.clipPath = "polygon(0 0, 100% 0, 100% 100%, 0 100%)";
   world.appendChild(cake);
 
-  cutter = mountCutter({ world, canvas, hint, onFinished: () => {} });
+  if (cutCtl && cutCtl.resize) cutCtl.resize();
+  cutCtl = mountCutter({ world: world, canvas: canvas, hint: hint, onFinished: () => {} });
 
-  done.addEventListener("click", () => {
-    playSparkle();
-    go(6);
-  }, { once: true });
+  if (done) {
+    done.addEventListener("click", () => {
+      sparkle();
+      go(7);
+    }, { once: true });
+  }
 }
+
+/* ---------------- stage 7: celebration ---------------- */
+
 function setupCelebration() {
   const title = qs("#wave-title");
-  const name = content.name;
-  const html = name.split("").map((ch, i) => `<span style="--i:${i}">${ch}</span>`).join("");
-  title.innerHTML = "";
-  const wrapper = document.createElement("div");
-  wrapper.className = "wave-title-wrap";
-  wrapper.innerHTML = html;
-  title.replaceWith(wrapper);
-  qs("#cele-sub").textContent = `Happy Birthday, ${name}`;
-  qs("#cele-continue").addEventListener("click", () => go(7), { once: true });
-  if (!reducedMotion) celebrate();
+  const name = content.name || "Recipient";
+  if (title) {
+    title.innerHTML = "";
+    name.split("").forEach((ch, i) => {
+      const span = createEl("span", "wave-letter");
+      span.style.setProperty("--i", String(i));
+      setText(span, ch === " " ? "\u00a0" : ch);
+      title.appendChild(span);
+    });
+  }
+  const sub = qs("#cele-sub");
+  setText(sub, "Happy Birthday, " + name);
+  const btn = qs("#cele-continue");
+  if (btn) btn.addEventListener("click", () => go(8), { once: true });
+  if (!reducedMotion()) {
+    celebrate();
+    setTimeout(() => confetti(24), 400);
+    setTimeout(() => firework(window.innerWidth * 0.3, window.innerHeight * 0.3), 900);
+    setTimeout(() => firework(window.innerWidth * 0.7, window.innerHeight * 0.25), 1300);
+  }
 }
 
-function startAgeCountdown() {
-  if (!content.dob) return;
-  const dob = new Date(content.dob + "T00:00:00");
-  function tick() {
-    const now = new Date();
-    const parts = ageParts(dob, now);
-    const totalDays = Math.floor((now - dob) / 86400000);
-    const totalHours = Math.floor((now - dob) / 3600000);
-    const next = new Date(now.getFullYear(), dob.getMonth(), dob.getDate());
-    if (next < now) next.setFullYear(next.getFullYear() + 1);
-    const daysLeft = Math.ceil((next - now) / 86400000);
-    const isToday = parts.years * 12 + parts.months === 0 && parts.days === 0 && now.getMonth() === dob.getMonth() && now.getDate() === dob.getDate();
-    const line = isToday
-      ? `Today is your birthday! ${parts.years} years old`
-      : `${parts.years}y ${parts.mo}m ${parts.d}d — ${daysLeft} days until your birthday`;
-    setText(qs("#age-line"), line);
-    if (isToday && ageInterval) { celebrate(); }
-  }
-  tick();
-  ageInterval = setInterval(tick, 1000);
-}
+/* ---------------- stage 8: message ---------------- */
 
 function setupMessage() {
   const msg = qs("#typed-msg");
-  const text = content.message;
-  let idx = 0;
-  let skipping = false;
-  const caret = document.createElement("span");
-  caret.className = "caret";
-  msg.appendChild(caret);
-
-  function type() {
-    if (skipping) { setText(msg, text); msg.appendChild(caret); return; }
-    if (idx < text.length) {
-      setText(msg, text.slice(0, idx + 1));
+  const text = content.message || "Happy Birthday!";
+  if (msg) {
+    msg.innerHTML = "";
+    const caret = createEl("span", "caret");
+    let i = 0;
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      if (typeTimer) clearTimeout(typeTimer);
+      msg.innerHTML = "";
+      setText(msg, text);
+    };
+    const step = () => {
+      if (done) return;
+      i += 1;
+      msg.innerHTML = "";
+      setText(msg, text.slice(0, i));
       msg.appendChild(caret);
-      idx++;
-      setTimeout(type, 35);
-    }
+      if (i >= text.length) { done = true; return; }
+      typeTimer = setTimeout(step, 32);
+    };
+    step();
+    msg.addEventListener("click", finish, { once: true });
   }
-  type();
 
-  msg.addEventListener("click", () => { skipping = true; }, { once: true });
-
-  startAgeCountdown();
+  startAgeTicker();
 
   const grid = qs("#fame-grid");
-  content.favorites.forEach(fav => {
-    const card = document.createElement("div");
-    card.className = "fame-card";
-    const lab = document.createElement("div"); lab.className = "label"; setText(lab, clampText(fav.label, LIMITS.favoriteLabel));
-    const txt = document.createElement("div"); txt.className = "text"; setText(txt, clampText(fav.text, LIMITS.favoriteText));
-    card.appendChild(lab); card.appendChild(txt); grid.appendChild(card);
-  });
+  if (grid) {
+    grid.innerHTML = "";
+    (content.favorites || []).forEach((fav) => {
+      const card = createEl("div", "fame-card");
+      const lab = createEl("div", "label", clampText(fav.label, LIMITS.favoriteLabel));
+      const txt = createEl("div", "text", clampText(fav.text, LIMITS.favoriteText));
+      card.appendChild(lab);
+      card.appendChild(txt);
+      grid.appendChild(card);
+    });
+  }
 
   const tl = qs("#timeline");
-  content.timeline.forEach(item => {
-    const it = document.createElement("div"); it.className = "timeline-item";
-    const d = document.createElement("div"); d.className = "date"; setText(d, clampText(item.date, LIMITS.timelineDate));
-    const t = document.createElement("div"); t.className = "title"; setText(t, clampText(item.title, LIMITS.timelineTitle));
-    const x = document.createElement("div"); x.className = "text"; setText(x, clampText(item.text, LIMITS.timelineText));
-    it.appendChild(d); it.appendChild(t); it.appendChild(x); tl.appendChild(it);
-  });
+  if (tl) {
+    tl.innerHTML = "";
+    (content.timeline || []).forEach((item) => {
+      const wrap = createEl("div", "timeline-item");
+      wrap.appendChild(createEl("div", "date", clampText(item.date, LIMITS.timelineDate)));
+      wrap.appendChild(createEl("div", "title", clampText(item.title, LIMITS.timelineTitle)));
+      wrap.appendChild(createEl("div", "text", clampText(item.text, LIMITS.timelineText)));
+      tl.appendChild(wrap);
+    });
+  }
 
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add("reveal"); });
-  }, { threshold: 0.15 });
-  qsa(".timeline-item").forEach(it => io.observe(it));
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) entry.target.classList.add("reveal");
+      });
+    }, { threshold: 0.15 });
+    qsa(".timeline-item").forEach((el) => io.observe(el));
+  } else {
+    qsa(".timeline-item").forEach((el) => el.classList.add("reveal"));
+  }
 
   const cont = qs("#msg-continue");
-  cont.classList.add("sticky");
-  cont.addEventListener("click", () => go(8), { once: true });
+  if (cont) {
+    cont.classList.add("sticky");
+    cont.addEventListener("click", () => go(9), { once: true });
+  }
 }
+
+function startAgeTicker() {
+  if (ageTimer) clearInterval(ageTimer);
+  const line = qs("#age-line");
+  if (!line || !content.dob) { if (line) setText(line, ""); return; }
+  function tick() {
+    const parts = ageParts(content.dob, new Date());
+    if (!parts) { setText(line, ""); return; }
+    if (parts.todayIs) {
+      setText(line, "Today is your birthday - " + parts.years + " years old - " + parts.totalDays + " days lived");
+    } else {
+      setText(line, parts.years + "y " + parts.months + "m " + parts.days + "d - " + parts.totalDays + " days lived - " + parts.daysLeft + " days to go");
+    }
+  }
+  tick();
+  ageTimer = setInterval(tick, 1000);
+}
+
+/* ---------------- stage 9: wish ---------------- */
+
 function setupWish() {
-  const sky = qs("#sky-canvas");
-  const wishUi = qs("#wish-ui");
-  const wishText = qs("#wish-text");
-  const wishCount = qs("#wish-count");
-  const wishStatus = qs("#wish-status");
-  const wishSend = qs("#wish-send");
-  const wishContinue = qs("#wish-continue");
-  const sheet = qs("#wish-sheet");
-  const sheetText = qs("#sheet-text");
-  const sheetDelete = qs("#sheet-delete");
-  const sheetClose = qs("#sheet-close");
-
-  mountSky({
-    container: qs("#app"),
-    canvas: sky,
-    onStarTap: (star) => {
-      setText(sheetText, star.text);
-      sheet.style.display = "flex";
-    }
+  const host = qs("#wish-stage-host");
+  if (!host) return;
+  if (skyCleanup) { skyCleanup(); skyCleanup = null; }
+  skyCleanup = mountSky({
+    container: host,
+    onContinue: () => go(10),
   });
-
-  wishText.addEventListener("input", () => {
-    const len = wishText.value.length;
-    setText(wishCount, `${len} / ${LIMITS.wish}`);
-    wishSend.disabled = len === 0;
-    if (len > LIMITS.wish) wishText.value = wishText.value.slice(0, LIMITS.wish);
-  });
-
-  let activeStar = null;
-  wishSend.addEventListener("click", async () => {
-    const wish = wishText.value.trim();
-    if (!wish) return;
-    wishSend.disabled = true;
-    playSparkle();
-
-    const stars = storageGet("birthday-stars", []);
-    if (stars.length >= 20) {
-      setText(wishStatus, "The sky is full (20 wishes max).");
-      return;
-    }
-
-    const rect = wishUi.getBoundingClientRect();
-    const startX = rect.left + rect.width / 2;
-    const startY = rect.top;
-
-    let attempts = 0;
-    let tx, ty;
-    do {
-      tx = Math.random() * window.innerWidth;
-      ty = Math.random() * (window.innerHeight * 0.6);
-      attempts++;
-    } while (
-      Math.hypot(tx - startX, ty - startY) < 180 &&
-      attempts < 50
-    );
-
-    activeStar = { id: Date.now(), text: wish, x: tx / window.innerWidth, y: ty / window.innerHeight, ts: Date.now() };
-
-    setText(wishStatus, "Your wish is being reviewed by the universeâ€¦");
-
-    if (reducedMotion) {
-      playSwell();
-      setText(wishStatus, "Your wish has been approved. It's shining now.");
-      stars.push(activeStar);
-      storageSet("birthday-stars", stars);
-      mountSky({ container: qs("#app"), canvas: sky, stars, onStarTap: (s) => { setText(sheetText, s.text); sheet.style.display = "flex"; } });
-      wishContinue.style.display = "block";
-      return;
-    }
-
-    const particles = [];
-    const steps = 40;
-    for (let i = 0; i < steps; i++) {
-      particles.push({ x: startX, y: startY, life: 1 });
-    }
-
-    let frame = 0;
-    function fly() {
-      frame++;
-      const t = Math.min(frame / steps, 1);
-      const bx = startX + (tx - startX) * t;
-      const by = startY + (ty - startY) * t - 200 * t * (1 - t);
-      particles.forEach(p => { p.x = bx + (Math.random() - 0.5) * 6; p.y = by + (Math.random() - 0.5) * 6; p.life = 1 - t; });
-      if (t < 1) { rafId = requestAnimationFrame(fly); } else {
-        playSwell();
-        setText(wishStatus, "Your wish has been approved. It's shining now.");
-        stars.push(activeStar);
-        storageSet("birthday-stars", stars);
-        mountSky({ container: qs("#app"), canvas: sky, stars, onStarTap: (s) => { setText(sheetText, s.text); sheet.style.display = "flex"; } });
-        wishContinue.style.display = "block";
-      }
-    }
-    rafId = requestAnimationFrame(fly);
-  });
-
-  sheetDelete.addEventListener("click", () => {
-    if (!activeStar) return;
-    let stars = storageGet("birthday-stars", []);
-    stars = stars.filter(s => s.id !== activeStar.id);
-    storageSet("birthday-stars", stars);
-    mountSky({ container: qs("#app"), canvas: sky, stars, onStarTap: (s) => { setText(sheetText, s.text); sheet.style.display = "flex"; } });
-    sheet.style.display = "none";
-    activeStar = null;
-    playSparkle();
-  });
-
-  sheetClose.addEventListener("click", () => { sheet.style.display = "none"; });
-
-  wishContinue.addEventListener("click", () => go(9), { once: true });
 }
+
+/* ---------------- stage 10: finale ---------------- */
 
 function setupFinale() {
-  setText(qs("#final-wish"), content.finalWish);
-  setText(qs("#final-from"), `â€” ${content.from}`);
-  const link = buildShareUrl(location.origin + location.pathname, { name: content.name, from: content.from, msg: content.message, dob: content.dob, theme: content.theme });
-  setText(qs("#final-link"), link);
-
-  qs("#final-copy").addEventListener("click", async () => {
-    try { await navigator.clipboard.writeText(link); toast("Link copied"); }
-    catch { const inp = qs("#final-link"); inp.select(); document.execCommand("copy"); toast("Link copied"); }
-  }, { once: false });
-
-  qs("#final-replay").addEventListener("click", () => {
-    go(0);
-    setTimeout(() => go(1), 300);
-  }, { once: false });
+  setText(qs("#final-wish"), content.finalWish || "Happy Birthday!");
+  setText(qs("#final-from"), "- " + (content.from || "Sender"));
+  const link = buildShareUrl({
+    name: content.name, from: content.from, message: content.message,
+    dob: content.dob, theme: content.theme,
+    pages: content.pages, favorites: content.favorites,
+    timeline: content.timeline, finalWish: content.finalWish,
+  });
+  const linkEl = qs("#final-link");
+  if (linkEl) {
+    linkEl.value = link;
+    setText(linkEl, link);
+  }
+  const copyBtn = qs("#final-copy");
+  if (copyBtn) {
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(link);
+        toast("Link copied");
+      } catch (err) {
+        toast("Copy failed");
+      }
+    });
+  }
+  const replayBtn = qs("#final-replay");
+  if (replayBtn) {
+    replayBtn.addEventListener("click", () => {
+      go(GEN_INDEX + 1);
+    });
+  }
 }
 
-function init() {
-  const saved = storageGet("birthday-content");
-  if (saved) content = { ...config, ...saved };
-  applyTheme();
+/* ---------------- boot ---------------- */
 
-  const params = parseParams(location.search);
-  if (params.name || params.from || params.msg || params.dob || params.theme) {
-    content = { ...config, ...params };
-    if (params.theme && validTheme(params.theme)) content.theme = params.theme;
-    go(0);
-  } else {
-    go(0);
+function loadContent() {
+  const stored = storageGet(CONTENT_KEY);
+  if (stored && typeof stored === "object") {
+    content = { ...config, ...stored };
   }
+  const params = parseParams(config);
+  if (params.hasQuery) {
+    content = { ...content, ...params };
+    if (params.theme) content.theme = validTheme(params.theme);
+    if (params.dob) content.dob = params.dob;
+    if (params.message) content.message = params.message;
+    if (params.name) content.name = params.name;
+    if (params.from) content.from = params.from;
+  }
+}
+
+function boot() {
+  loadContent();
+  applyTheme();
+  syncMuteButton();
+  initFx("#bg-canvas", "#fx-canvas");
+
+  const personalized = parseParams(config).hasQuery || storageGet(CONTENT_KEY);
+  showStage(personalized ? GEN_INDEX + 1 : GEN_INDEX);
+  setupStage(STAGES[personalized ? GEN_INDEX + 1 : GEN_INDEX]);
 
   if (content.dob) {
-    const dob = new Date(content.dob + "T00:00:00");
-    const now = new Date();
-    const isToday = now.getMonth() === dob.getMonth() && now.getDate() === dob.getDate() && now.getFullYear() === dob.getFullYear();
-    if (isToday) celebrate();
+    const parts = ageParts(content.dob, new Date());
+    if (parts && parts.todayIs && !reducedMotion()) {
+      setTimeout(() => celebrate(), 600);
+    }
   }
 
-  window.addEventListener("resize", () => {
-    if (cutter) cutter.resize();
-  });
-
-  document.addEventListener("visibilitychange", () => {
-    if (rafId) cancelAnimationFrame(rafId);
-    rafId = null;
-  });
-
-  document.fonts.ready.then(() => {
-    if (els.loader) els.loader.style.display = "none";
-  });
+  if (els.loader) {
+    const hide = () => { els.loader.style.display = "none"; };
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(hide).catch(hide);
+    } else {
+      setTimeout(hide, 300);
+    }
+  }
 }
 
-init();
+boot();
