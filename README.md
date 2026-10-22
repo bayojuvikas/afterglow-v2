@@ -22,8 +22,9 @@ A mobile-only, single-page birthday web app built with vanilla HTML, CSS, and Ja
 
 ```
 afterglow-v2/
-├── index.html
-├── customize.html        # front-end editor: fill placeholders, preview, share
+├── index.html            # personalisation form - the landing page
+├── experience.html       # the animated 11-stage experience
+├── customize.html        # redirect alias to index.html
 ├── manifest.json
 ├── css/
 │   └── style.css          # design tokens, themes, glass UI, stages
@@ -60,9 +61,9 @@ export const config = {
 
 Text values are length-limited per `LIMITS` and inserted via `textContent` only.
 
-## The visual editor (customize.html)
+## The personalisation form (index.html)
 
-Open `customize.html` in any browser - no build step, no server needed. It is a front-end form where you fill in every placeholder and see the result immediately:
+Open `index.html` in any browser - no build step, no server needed. This is the landing page: a front-end form where you fill in every placeholder and see the result immediately:
 
 - **Basics**: recipient name, sender, message, date of birth, theme, light/dark mode
 - **Storybook pages**: add, edit and remove pages
@@ -72,19 +73,29 @@ Open `customize.html` in any browser - no build step, no server needed. It is a 
 
 Two actions at the bottom:
 
-- **Open experience** - saves everything to this device under the `afterglow_content` localStorage key and jumps straight into the experience with your text applied.
-- **Copy share link** - builds a link to `index.html` with a base64 `?d=` payload carrying the name, sender, message, date of birth, theme, pages, Hall of Fame entries, timeline and final wish. Send that link to anyone - it needs no storage on their device.
+- **Continue to experience** - saves everything to this device under the `afterglow_content` localStorage key and jumps straight to `experience.html` with your text applied. The details travel in the URL, so the experience works even where storage is blocked.
+- **Copy share link** - builds a link to `experience.html` with a base64 `?d=` payload carrying the name, sender, message, date of birth, theme, pages, Hall of Fame entries, timeline and final wish. Send that link to anyone - it needs no storage on their device.
 
 **Reset** clears the saved content and restores the defaults.
 
-The built-in generator in `index.html` (stage 0) does the same thing for the core fields only - use `customize.html` when you want the full set.
+The built-in generator in `experience.html` (stage 0) covers the core fields only and appears if you open the experience with no details - use the form on `index.html` for the full set.
+
+## The one-link flow
+
+**Live link:** `https://bayojuvikas.github.io/afterglow-v2/`
+
+1. The visitor lands on `index.html` and fills in the placeholders.
+2. Tapping **Continue to experience** goes to `experience.html` with the details in the URL, and the animation starts with the gift, the storybook, the cake, the candles, the cut, the celebration, the message and the star wish - all using the entered text.
+3. The same URL works as a direct link: opening `index.html?d=...` forwards straight to the experience.
+
+`customize.html` is kept only as a redirect to `index.html` so older bookmarks keep working.
 
 ## Building the share link
 
 Open the generator (stage 0), fill in name/sender/message/theme/optional DOB, then tap **Go**. The app builds a share URL:
 
 ```
-https://your-host.github.io/repo/?name=Recipient&from=Sender&msg=...&dob=1990-10-18&theme=rose
+https://your-host.github.io/repo/experience.html?d=<base64-payload>
 ```
 
 Or a single Base64 payload `?d=...`. Tap **Copy link** (uses `navigator.clipboard.writeText` with a fallback that selects the link text).
@@ -126,7 +137,7 @@ If the URL already has params, the generator is skipped and the experience start
 - Audio starts only after the first user tap (iOS requirement).
 - No network calls are made for the wish approval; it is simulated locally.
 - Stars are saved on this device only (max 20).
-- `customize.html` and the stage-0 generator both write to the `afterglow_content` localStorage key; the share link uses a `?d=` base64 payload so it works with no storage on the recipient's device.
+- `index.html` and the stage-0 generator both write to the `afterglow_content` localStorage key; the share link uses a `?d=` base64 payload so it works with no storage on the recipient's device.
 
 ---
 Built with vanilla HTML, CSS, and JavaScript. Deploy anywhere static hosting is supported.

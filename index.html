@@ -1,153 +1,857 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="rose" data-mode="dark">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#ff6b9d">
-<meta name="description" content="A cinematic birthday experience. Gift, key, storybook, cake, candles, celebration, message, and a wish sent to the stars.">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="mobile-web-app-capable" content="yes">
-<meta property="og:title" content="Birthday Experience">
-<meta property="og:description" content="A cinematic birthday experience sent to the stars.">
-<meta property="og:type" content="website">
-<link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="css/style.css">
+<title>Personalize your experience</title>
 <style>
-html{overflow-y:scroll}
-body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#0f0f12;color:#fff;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-#loader{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#111}
-.spinner{width:44px;height:44px;border:3px solid rgba(255,255,255,0.25);border-top-color:#ff6b9d;border-radius:50%;animation:spin 0.8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+  :root {
+    --accent: #ff7aa2;
+    --bg-a: #14091f;
+    --bg-b: #2a0f3d;
+    --bg-c: #0b1020;
+    --card: rgba(255, 255, 255, 0.08);
+    --card-brd: rgba(255, 255, 255, 0.16);
+    --text: #f4f1f8;
+    --muted: #b9b1c9;
+    --field: rgba(0, 0, 0, 0.26);
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
+  html[data-mode="light"] {
+    --bg-a: #fdf3f7;
+    --bg-b: #e7ecff;
+    --bg-c: #fff7ef;
+    --card: rgba(255, 255, 255, 0.62);
+    --card-brd: rgba(20, 10, 40, 0.12);
+    --text: #201832;
+    --muted: #5c5470;
+    --field: rgba(255, 255, 255, 0.85);
+    --shadow: 0 10px 26px rgba(40, 20, 60, 0.14);
+  }
+  html[data-theme="midnight"] { --accent: #6ea8ff; }
+  html[data-theme="royal"] { --accent: #b184ff; }
+  html[data-theme="sunset"] { --accent: #ff9a5c; }
+  html[data-theme="forest"] { --accent: #4fd1a5; }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: linear-gradient(135deg, var(--bg-a) 0%, var(--bg-b) 50%, var(--bg-c) 100%);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.45;
+    padding:
+      calc(env(safe-area-inset-top) + 14px)
+      16px
+      calc(env(safe-area-inset-bottom) + 120px);
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 480px; margin: 0 auto; }
+
+  header { padding: 6px 2px 16px; }
+  h1 { font-size: 24px; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
+  .backlink {
+    display: inline-block;
+    min-height: 44px;
+    line-height: 44px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid var(--card-brd);
+    background: var(--card);
+    color: var(--text);
+    text-decoration: none;
+    font-size: 14px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-brd);
+    border-radius: 18px;
+    padding: 16px;
+    margin: 0 0 16px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .card h2 {
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin: 0 0 12px;
+  }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  label {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  input[type="text"], input[type="date"], select, textarea {
+    width: 100%;
+    font-family: inherit;
+    font-size: 16px;
+    color: var(--text);
+    background: var(--field);
+    border: 1px solid var(--card-brd);
+    border-radius: 12px;
+    padding: 12px 12px;
+    min-height: 48px;
+    touch-action: manipulation;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  textarea { min-height: 92px; resize: vertical; line-height: 1.4; }
+  select {
+    background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 18px) 21px, calc(100% - 13px) 21px;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 38px;
+  }
+  html[data-mode="light"] select option { color: #201832; }
+  input:focus, select:focus, textarea:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row {
+    border: 1px dashed var(--card-brd);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 12px;
+    background: rgba(0, 0, 0, 0.10);
+  }
+  html[data-mode="light"] .row { background: rgba(255, 255, 255, 0.45); }
+  .row:last-of-type { margin-bottom: 0; }
+  .rowhead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+  .rowhead span { font-size: 12px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+
+  button {
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 12px;
+    border: 1px solid var(--card-brd);
+    background: rgba(255, 255, 255, 0.10);
+    color: var(--text);
+    min-height: 48px;
+    padding: 0 16px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  html[data-mode="light"] button { background: rgba(255, 255, 255, 0.8); }
+  button:active { transform: translateY(1px); }
+  .btn-accent {
+    background: var(--accent);
+    border-color: transparent;
+    color: #1a0d22;
+  }
+  html[data-mode="light"] .btn-accent { color: #ffffff; }
+  .btn-sm {
+    min-height: 40px;
+    padding: 0 12px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .btn-danger { color: #ff9b9b; border-color: rgba(255, 155, 155, 0.4); }
+  .addbtn { width: 100%; margin-top: 12px; }
+
+  .preview {
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 16px;
+    border: 1px solid var(--card-brd);
+    background:
+      radial-gradient(120% 120% at 10% 0%, color-mix(in srgb, var(--accent) 45%, transparent) 0%, transparent 60%),
+      var(--card);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .preview .pv-name { font-size: 26px; font-weight: 700; margin: 0 0 4px; line-height: 1.15; }
+  .preview .pv-from { font-size: 14px; color: var(--muted); margin: 0 0 10px; }
+  .preview .pv-msg { font-size: 15px; margin: 0 0 12px; white-space: pre-wrap; word-break: break-word; }
+  .preview .pv-theme {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    padding: 4px 10px;
+  }
+  .preview .pv-msg:empty::after { content: "No message yet."; color: var(--muted); }
+
+  .note { font-size: 12px; color: var(--muted); text-align: center; margin: 4px 0 0; }
+
+  .actionbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    padding: 10px 16px calc(env(safe-area-inset-bottom) + 10px);
+    background: linear-gradient(to top, rgba(10, 6, 18, 0.92), rgba(10, 6, 18, 0.55));
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--card-brd);
+  }
+  html[data-mode="light"] .actionbar { background: linear-gradient(to top, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.6)); }
+  .actionbar .inner { max-width: 480px; margin: 0 auto; display: flex; gap: 8px; }
+  .actionbar button { flex: 1 1 0; padding: 0 8px; font-size: 14px; }
+  .actionbar .primary { flex: 1.4 1 0; }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(env(safe-area-inset-bottom) + 88px);
+    transform: translateX(-50%) translateY(12px);
+    z-index: 60;
+    max-width: 88vw;
+    padding: 12px 16px;
+    border-radius: 14px;
+    background: rgba(18, 10, 28, 0.94);
+    border: 1px solid var(--card-brd);
+    color: #f6f2fb;
+    font-size: 14px;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .fallback { margin-top: 12px; display: none; }
+  .fallback.show { display: block; }
+  .fallback input { word-break: break-all; font-size: 13px; }
+
+  .count { font-size: 11px; color: var(--muted); float: right; font-weight: 400; }
+  .labelrow { display: flex; justify-content: space-between; align-items: baseline; }
+
+  @media (min-width: 430px) { body { padding-left: 20px; padding-right: 20px; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
-<title>Birthday Experience</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231a0f1a'/%3E%3Ctext x='32' y='45' font-size='38' text-anchor='middle' fill='%23ff6b9d'%3E%F0%9F%8E%81%3C/text%3E%3C/svg%3E">
 </head>
 <body>
-<div id="loader"><div class="spinner"></div><div style="margin-top:12px;font-size:16px">Loading...</div></div>
-<div id="rotate-gate" style="display:none;position:fixed;inset:0;z-index:10000;align-items:center;justify-content:center;background:#000;color:#fff;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);text-align:center"><div style="font-size:20px">Please rotate your phone to portrait</div><div style="margin-top:8px;opacity:.7">Portrait mode is required</div></div>
-<canvas id="bg-canvas"></canvas>
-<canvas id="fx-canvas"></canvas>
-<div id="app">
-<header class="chroma">
-<a class="chip chip-link" id="personalize-btn" href="customize.html" aria-label="Personalize">Personalize</a>
-<div class="chroma-right">
-<button class="chip" id="mute-btn" aria-label="Toggle mute">Mute</button>
-<button class="chip" id="theme-btn" aria-label="Change theme">Theme</button>
-<button class="chip" id="mode-btn" aria-label="Change mode">Mode</button>
-<button class="chip" id="skip-btn" aria-label="Skip to finale">Skip</button>
+<div class="wrap">
+
+  <header>
+    <a class="backlink" href="experience.html">&lt; Back to experience</a>
+    <h1>Personalize your experience</h1>
+    <p class="sub">Fill in the details below, then continue to the animated experience.</p>
+  </header>
+
+  <section class="preview" aria-live="polite">
+    <p class="pv-name" id="pvName">Recipient</p>
+    <p class="pv-from" id="pvFrom">From Sender</p>
+    <p class="pv-msg" id="pvMsg"></p>
+    <span class="pv-theme" id="pvTheme">rose</span>
+  </section>  <section class="card">
+    <h2>Basics</h2>
+    <div class="field">
+      <label for="fName">Recipient name</label>
+      <input type="text" id="fName" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Recipient">
+    </div>
+    <div class="field">
+      <label for="fFrom">From</label>
+      <input type="text" id="fFrom" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Sender">
+    </div>
+    <div class="field">
+      <label class="labelrow" for="fMessage">Message <span class="count" id="cMessage">0/280</span></label>
+      <textarea id="fMessage" maxlength="280" placeholder="A personal birthday message goes here."></textarea>
+    </div>
+    <div class="field">
+      <label for="fDob">Date of birth</label>
+      <input type="date" id="fDob">
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label for="fTheme">Theme</label>
+        <select id="fTheme">
+          <option value="rose">rose</option>
+          <option value="midnight">midnight</option>
+          <option value="royal">royal</option>
+          <option value="sunset">sunset</option>
+          <option value="forest">forest</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fMode">Mode</label>
+        <select id="fMode">
+          <option value="dark">dark</option>
+          <option value="light">light</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Storybook pages</h2>
+    <div id="pagesList"></div>
+    <button type="button" class="addbtn" id="addPage">Add page</button>
+  </section>
+
+  <section class="card">
+    <h2>Hall of Fame</h2>
+    <div id="favList"></div>
+    <button type="button" class="addbtn" id="addFav">Add entry</button>
+  </section>
+
+  <section class="card">
+    <h2>Timeline</h2>
+    <div id="timeList"></div>
+    <button type="button" class="addbtn" id="addTime">Add entry</button>
+  </section>
+
+  <section class="card">
+    <h2>Final wish</h2>
+    <div class="field">
+      <label class="labelrow" for="fFinal">Wish <span class="count" id="cFinal">0/160</span></label>
+      <textarea id="fFinal" maxlength="160" placeholder="May this year be kind and full of joy. Happy birthday."></textarea>
+    </div>
+  </section>
+
+  <p class="note">Saved on this device. The share link carries everything.</p>
+
+  <div class="fallback" id="fallback">
+    <label for="linkOut">Copy this link manually</label>
+    <input type="text" id="linkOut" readonly>
+  </div>
+
 </div>
-</header>
-<div class="story-progress"><div id="progress-fill"></div></div>
-<div id="progress-count">1 / 11</div>
-<div id="stages">
-<section id="stage-generator" data-stage="generator">
-<div class="stage-inner">
-<h1 class="stage-title">Make it personal</h1>
-<p class="stage-sub">Fill in the placeholders, then send the link.</p>
-<form id="gen-form" autocomplete="off">
-<label for="gen-name">Recipient name</label>
-<input id="gen-name" type="text" placeholder="Recipient" maxlength="24">
-<label for="gen-from">From</label>
-<input id="gen-from" type="text" placeholder="Sender" maxlength="24">
-<label for="gen-msg">Message</label>
-<textarea id="gen-msg" maxlength="280" placeholder="Your personal message"></textarea>
-<label for="gen-theme">Theme</label>
-<select id="gen-theme"><option value="rose">Rose</option><option value="midnight">Midnight</option><option value="royal">Royal</option><option value="sunset">Sunset</option><option value="forest">Forest</option></select>
-<label for="gen-dob">Date of birth (optional)</label>
-<input id="gen-dob" type="date">
-</form>
-<div id="gen-preview" class="glass-card">Preview</div>
-<div class="gen-actions">
-<button id="gen-go" class="chip chip-primary" type="button">Open experience</button>
-<button id="gen-copy" class="chip" type="button">Copy link</button>
+
+<div class="actionbar">
+  <div class="inner">
+    <button type="button" class="primary btn-accent" id="btnOpen">Continue to experience</button>
+    <button type="button" id="btnCopy">Copy share link</button>
+    <button type="button" id="btnReset">Reset</button>
+  </div>
 </div>
-<a class="chip chip-link" href="customize.html">Full editor</a>
-</div>
-</section>
-<section id="stage-gift" data-stage="gift">
-<div class="stage-inner">
-<p class="stage-hint">Tap the gift</p>
-<button id="gift-hit" class="svg-hit" aria-label="Open gift">
-<svg class="draw-svg gift-svg" viewBox="0 0 200 200"><path class="draw" d="M50,150 L150,150 L150,50 L50,50 Z"/><path class="draw" d="M100,50 L100,150"/><path class="draw" d="M50,100 L150,100"/></svg>
-</button>
-</div>
-</section>
-<section id="stage-key" data-stage="key">
-<div class="stage-inner">
-<p class="stage-hint">Tap the key</p>
-<button id="key-hit" class="svg-hit" aria-label="Unlock with key">
-<svg class="draw-svg key-svg" viewBox="0 0 200 200"><path class="draw" d="M70,120 L130,120 L130,60"/><path class="draw" d="M130,120 L160,150 L150,160 L140,150"/><path class="draw" d="M95,95 L115,75"/><path class="draw" d="M60,140 L80,160 L60,175"/></svg>
-</button>
-</div>
-</section>
-<section id="stage-storybook" data-stage="storybook">
-<div class="stage-inner">
-<div id="book-wrap"><div id="book"></div></div>
-<p class="stage-hint">Tap or swipe to turn the page</p>
-</div>
-</section>
-<section id="stage-cake" data-stage="cake">
-<div class="stage-inner">
-<div id="balloon-row"></div>
-<div id="cake-display"></div>
-<button id="cake-continue" class="chip chip-primary" type="button">Light the candles</button>
-</div>
-</section>
-<section id="stage-blow" data-stage="blow">
-<div class="stage-inner">
-<p id="blow-prompt" class="stage-hint">Blow out the candles</p>
-<div id="blow-display"></div>
-<p id="blow-hint" class="stage-sub">Tap Blow, then blow into your phone</p>
-<button id="blow-btn" class="chip chip-primary" type="button">Blow</button>
-</div>
-</section>
-<section id="stage-cut" data-stage="cut">
-<div class="stage-inner">
-<p id="cut-prompt" class="stage-hint">Swipe across the cake to cut it</p>
-<div class="cut-area" id="cut-area"><div id="cake-world"></div><canvas id="cut-canvas"></canvas></div>
-<p id="cut-hint" class="stage-sub"></p>
-<button id="cut-done" class="chip chip-primary" type="button">Done</button>
-</div>
-</section>
-<section id="stage-celebration" data-stage="celebration">
-<div class="stage-inner">
-<h1 id="wave-title" class="stage-title">Happy Birthday</h1>
-<p id="cele-sub" class="stage-sub">Celebrate</p>
-<button id="cele-continue" class="chip chip-primary" type="button">Continue</button>
-</div>
-</section>
-<section id="stage-message" data-stage="message">
-<div class="stage-inner">
-<p id="typed-msg"></p>
-<p id="age-line" class="stage-sub"></p>
-<h2 class="sec-title">Hall of Fame</h2>
-<div class="fame-grid" id="fame-grid"></div>
-<h2 class="sec-title">Timeline</h2>
-<div class="timeline" id="timeline"></div>
-<button id="msg-continue" class="chip chip-primary" type="button">Continue</button>
-</div>
-</section>
-<section id="stage-wish" data-stage="wish">
-<div id="wish-stage-host" class="wish-host"></div>
-</section>
-<section id="stage-finale" data-stage="finale">
-<div class="stage-inner">
-<div class="finale-card">
-<svg class="floral" viewBox="0 0 200 200" aria-hidden="true"><g class="floral-draw" fill="none" stroke="currentColor" stroke-width="2"><circle cx="100" cy="100" r="78"/><circle cx="100" cy="100" r="52"/><circle cx="100" cy="100" r="26"/><path d="M100 22 L100 178 M22 100 L178 100 M45 45 L155 155 M155 45 L45 155"/></g><g class="floral-petals" fill="currentColor"><ellipse cx="100" cy="38" rx="10" ry="18"/><ellipse cx="100" cy="162" rx="10" ry="18"/><ellipse cx="38" cy="100" rx="18" ry="10"/><ellipse cx="162" cy="100" rx="18" ry="10"/></g></svg>
-<p id="final-wish"></p>
-<p id="final-from"></p>
-<input id="final-link" type="text" readonly aria-label="Share link">
-<div class="final-actions">
-<button id="final-copy" class="chip chip-primary" type="button">Copy link</button>
-<button id="final-replay" class="chip" type="button">Replay</button>
-</div>
-</div>
-</div>
-</section>
-</div>
-<div id="toast"></div>
-</div>
-<script type="module" src="js/main.js"></script>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div><script>
+(function () {
+    /* If this page is opened with a payload, go straight to the experience. */
+    try {
+      if (location.search && /(^|[?&])(d|name|from|msg|dob|theme)=/.test(location.search)) {
+        location.replace("experience.html" + location.search);
+        return;
+      }
+    } catch (e) { /* ignore */ }
+  "use strict";
+
+  var STORAGE_KEY = "afterglow_content";
+
+  var THEME_COLORS = {
+    rose: "#ff7aa2",
+    midnight: "#6ea8ff",
+    royal: "#b184ff",
+    sunset: "#ff9a5c",
+    forest: "#4fd1a5"
+  };
+  var THEME_NAMES = ["rose", "midnight", "royal", "sunset", "forest"];
+
+  var DEFAULTS = {
+    name: "Recipient",
+    from: "Sender",
+    message: "A personal birthday message goes here.",
+    dob: "",
+    theme: "rose",
+    mode: "dark",
+    pages: [
+      "Once upon a time began the story.",
+      "The little spark never left.",
+      "Tonight the candles wait for you."
+    ],
+    favorites: [
+      { label: "Family", text: "The one who makes a house feel like it knows your name." },
+      { label: "Art", text: "Hands that turn ordinary hours into something that stays." }
+    ],
+    timeline: [
+      { date: "Year one", title: "Arrival", text: "A new chapter begins." },
+      { date: "Tonight", title: "Celebration", text: "A sky of wishes sent your way." }
+    ],
+    finalWish: "May this year be kind and full of joy. Happy birthday."
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  /* ---------- storage helpers (always guarded) ---------- */
+  function storageGet(key) {
+    try {
+      return window.localStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
+  }
+  function storageSet(key, value) {
+    try {
+      window.localStorage.setItem(key, value);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  function storageRemove(key) {
+    try {
+      window.localStorage.removeItem(key);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /* ---------- sanitising helpers ---------- */
+  function cleanStr(value, max) {
+    if (value === null || value === undefined) return "";
+    var s = String(value);
+    s = s.replace(/[\r\n\t]+/g, " ").trim();
+    if (typeof max === "number" && max > 0 && s.length > max) s = s.slice(0, max);
+    return s;
+  }
+  function cleanText(value, max) {
+    if (value === null || value === undefined) return "";
+    var s = String(value);
+    if (typeof max === "number" && max > 0 && s.length > max) s = s.slice(0, max);
+    return s;
+  }
+  function cleanTheme(value) {
+    var t = String(value || "").toLowerCase();
+    return THEME_NAMES.indexOf(t) !== -1 ? t : DEFAULTS.theme;
+  }
+  function cleanMode(value) {
+    var m = String(value || "").toLowerCase();
+    return (m === "light" || m === "dark") ? m : DEFAULTS.mode;
+  }
+  function cleanDate(value) {
+    var s = cleanStr(value, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : "";
+  }
+  function cleanList(value, mapper, limit) {
+    var out = [];
+    if (!Array.isArray(value)) return out;
+    for (var i = 0; i < value.length; i++) {
+      var item = mapper(value[i]);
+      if (item !== null) out.push(item);
+      if (out.length >= (limit || 30)) break;
+    }
+    return out;
+  }
+
+  function normalize(raw) {
+    var src = (raw && typeof raw === "object") ? raw : {};
+    var pages = cleanList(src.pages, function (p) {
+      if (typeof p !== "string") return null;
+      return cleanText(p, 140);
+    }, 30);
+    var favorites = cleanList(src.favorites, function (f) {
+      if (!f || typeof f !== "object") return null;
+      return {
+        label: cleanStr(f.label, 18),
+        text: cleanText(f.text, 90)
+      };
+    }, 30);
+    var timeline = cleanList(src.timeline, function (t) {
+      if (!t || typeof t !== "object") return null;
+      return {
+        date: cleanStr(t.date, 20),
+        title: cleanStr(t.title, 24),
+        text: cleanText(t.text, 90)
+      };
+    }, 30);
+    return {
+      name: cleanStr(src.name, 24),
+      from: cleanStr(src.from, 24),
+      message: cleanText(src.message, 280),
+      dob: cleanDate(src.dob),
+      theme: cleanTheme(src.theme),
+      mode: cleanMode(src.mode),
+      pages: pages,
+      favorites: favorites,
+      timeline: timeline,
+      finalWish: cleanText(src.finalWish, 160)
+    };
+  }
+
+  function cloneDefaults() {
+    return normalize(JSON.parse(JSON.stringify(DEFAULTS)));
+  }
+
+  /* ---------- toast ---------- */
+  var toastTimer = null;
+  function showToast(msg) {
+    var t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      t.classList.remove("show");
+    }, 2800);
+  }
+
+  /* ---------- theme ---------- */
+  function applyTheme(theme, mode) {
+    var th = cleanTheme(theme);
+    var md = cleanMode(mode);
+    document.documentElement.setAttribute("data-theme", th);
+    document.documentElement.setAttribute("data-mode", md);
+    document.documentElement.style.setProperty("--accent", THEME_COLORS[th]);
+  }  /* ---------- preview ---------- */
+  function updatePreview() {
+    var name = cleanStr($("fName").value, 24);
+    var from = cleanStr($("fFrom").value, 24);
+    var msg = cleanText($("fMessage").value, 280);
+    var theme = cleanTheme($("fTheme").value);
+    $("pvName").textContent = name || DEFAULTS.name;
+    $("pvFrom").textContent = from ? ("From " + from) : ("From " + DEFAULTS.from);
+    $("pvMsg").textContent = msg;
+    $("pvTheme").textContent = theme;
+    $("cMessage").textContent = msg.length + "/280";
+    var fw = cleanText($("fFinal").value, 160);
+    $("cFinal").textContent = fw.length + "/160";
+    applyTheme(theme, cleanMode($("fMode").value));
+  }
+
+  /* ---------- dynamic list builders ---------- */
+  function makeLabel(text) {
+    var el = document.createElement("label");
+    el.textContent = text;
+    return el;
+  }
+  function makeTextInput(value, max, placeholder) {
+    var el = document.createElement("input");
+    el.type = "text";
+    el.maxLength = max;
+    el.setAttribute("maxlength", String(max));
+    el.autocomplete = "off";
+    el.spellcheck = false;
+    el.placeholder = placeholder || "";
+    el.value = value || "";
+    el.addEventListener("input", updatePreview);
+    return el;
+  }
+  function makeTextArea(value, max, placeholder) {
+    var el = document.createElement("textarea");
+    el.maxLength = max;
+    el.setAttribute("maxlength", String(max));
+    el.placeholder = placeholder || "";
+    el.value = value || "";
+    el.addEventListener("input", updatePreview);
+    return el;
+  }
+  function makeRemoveButton(onClick) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn-sm btn-danger";
+    btn.textContent = "Remove";
+    btn.addEventListener("click", onClick);
+    return btn;
+  }
+  function makeRow(indexLabel) {
+    var row = document.createElement("div");
+    row.className = "row";
+    var head = document.createElement("div");
+    head.className = "rowhead";
+    var span = document.createElement("span");
+    span.textContent = indexLabel;
+    head.appendChild(span);
+    row.appendChild(head);
+    return { row: row, head: head };
+  }
+
+  function renderPages(pages) {
+    var host = $("pagesList");
+    while (host.firstChild) host.removeChild(host.firstChild);
+    for (var i = 0; i < pages.length; i++) {
+      (function (index) {
+        var parts = makeRow("Page " + (index + 1));
+        var field = document.createElement("div");
+        field.className = "field";
+        field.appendChild(makeLabel("Text"));
+        field.appendChild(makeTextArea(pages[index], 140, "Write a line of the story..."));
+        parts.row.appendChild(field);
+        parts.head.appendChild(makeRemoveButton(function () {
+          var cur = collect().pages;
+          cur.splice(index, 1);
+          renderPages(cur);
+        }));
+        host.appendChild(parts.row);
+      })(i);
+    }
+  }
+
+  function renderFavorites(items) {
+    var host = $("favList");
+    while (host.firstChild) host.removeChild(host.firstChild);
+    for (var i = 0; i < items.length; i++) {
+      (function (index) {
+        var parts = makeRow("Entry " + (index + 1));
+        var f1 = document.createElement("div");
+        f1.className = "field";
+        f1.appendChild(makeLabel("Title"));
+        f1.appendChild(makeTextInput(items[index].label, 18, "Title"));
+        parts.row.appendChild(f1);
+        var f2 = document.createElement("div");
+        f2.className = "field";
+        f2.appendChild(makeLabel("Description"));
+        f2.appendChild(makeTextArea(items[index].text, 90, "A short description..."));
+        parts.row.appendChild(f2);
+        parts.head.appendChild(makeRemoveButton(function () {
+          var cur = collect().favorites;
+          cur.splice(index, 1);
+          renderFavorites(cur);
+        }));
+        host.appendChild(parts.row);
+      })(i);
+    }
+  }
+
+  function renderTimeline(items) {
+    var host = $("timeList");
+    while (host.firstChild) host.removeChild(host.firstChild);
+    for (var i = 0; i < items.length; i++) {
+      (function (index) {
+        var parts = makeRow("Entry " + (index + 1));
+        var f1 = document.createElement("div");
+        f1.className = "field";
+        f1.appendChild(makeLabel("Date"));
+        f1.appendChild(makeTextInput(items[index].date, 20, "Year one"));
+        parts.row.appendChild(f1);
+        var f2 = document.createElement("div");
+        f2.className = "field";
+        f2.appendChild(makeLabel("Title"));
+        f2.appendChild(makeTextInput(items[index].title, 24, "Arrival"));
+        parts.row.appendChild(f2);
+        var f3 = document.createElement("div");
+        f3.className = "field";
+        f3.appendChild(makeLabel("Text"));
+        f3.appendChild(makeTextArea(items[index].text, 90, "What happened..."));
+        parts.row.appendChild(f3);
+        parts.head.appendChild(makeRemoveButton(function () {
+          var cur = collect().timeline;
+          cur.splice(index, 1);
+          renderTimeline(cur);
+        }));
+        host.appendChild(parts.row);
+      })(i);
+    }
+  }  /* ---------- collect form state ---------- */
+  function collect() {
+    var pages = [];
+    var pageNodes = $("pagesList").querySelectorAll("textarea");
+    for (var i = 0; i < pageNodes.length; i++) {
+      pages.push(cleanText(pageNodes[i].value, 140));
+    }
+    var favorites = [];
+    var favRows = $("favList").querySelectorAll(".row");
+    for (var j = 0; j < favRows.length; j++) {
+      var fInputs = favRows[j].querySelectorAll("input");
+      var fAreas = favRows[j].querySelectorAll("textarea");
+      favorites.push({
+        label: cleanStr(fInputs[0] ? fInputs[0].value : "", 18),
+        text: cleanText(fAreas[0] ? fAreas[0].value : "", 90)
+      });
+    }
+    var timeline = [];
+    var timeRows = $("timeList").querySelectorAll(".row");
+    for (var k = 0; k < timeRows.length; k++) {
+      var tInputs = timeRows[k].querySelectorAll("input");
+      var tAreas = timeRows[k].querySelectorAll("textarea");
+      timeline.push({
+        date: cleanStr(tInputs[0] ? tInputs[0].value : "", 20),
+        title: cleanStr(tInputs[1] ? tInputs[1].value : "", 24),
+        text: cleanText(tAreas[0] ? tAreas[0].value : "", 90)
+      });
+    }
+    return normalize({
+      name: $("fName").value,
+      from: $("fFrom").value,
+      message: $("fMessage").value,
+      dob: $("fDob").value,
+      theme: $("fTheme").value,
+      mode: $("fMode").value,
+      pages: pages,
+      favorites: favorites,
+      timeline: timeline,
+      finalWish: $("fFinal").value
+    });
+  }
+
+  /* ---------- fill form ---------- */
+  function fillForm(data) {
+    $("fName").value = data.name;
+    $("fFrom").value = data.from;
+    $("fMessage").value = data.message;
+    $("fDob").value = data.dob;
+    $("fTheme").value = data.theme;
+    $("fMode").value = data.mode;
+    $("fFinal").value = data.finalWish;
+    renderPages(data.pages);
+    renderFavorites(data.favorites);
+    renderTimeline(data.timeline);
+    updatePreview();
+  }
+
+  /* ---------- share link ---------- */
+  function buildShareLink(data) {
+    var payload = {
+      name: data.name,
+      from: data.from,
+      msg: data.message,
+      dob: data.dob,
+      theme: data.theme,
+      pages: data.pages,
+      favorites: data.favorites,
+      timeline: data.timeline,
+      finalWish: data.finalWish
+    };
+    var json = JSON.stringify(payload);
+    var bytes = new TextEncoder().encode(json);
+    var bin = "";
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    var b64 = btoa(bin);
+    return resolveExperienceUrl() + "?d=" + encodeURIComponent(b64);
+  }
+
+  function resolveExperienceUrl() {
+    var base = location.href;
+    try {
+      return new URL("experience.html", base).href;
+    } catch (e) {
+      try {
+        return new URL("experience.html", document.baseURI || base).href;
+      } catch (e2) {
+        return "experience.html";
+      }
+    }
+  }
+
+  function showFallback(link) {
+    var box = $("fallback");
+    var input = $("linkOut");
+    input.value = link;
+    box.classList.add("show");
+    try {
+      input.focus();
+      input.setSelectionRange(0, link.length);
+    } catch (e) {}
+  }
+
+  function copyLink() {
+    var data = collect();
+    var link;
+    try {
+      link = buildShareLink(data);
+    } catch (e) {
+      showToast("Could not build the link.");
+      return;
+    }
+    storageSet(STORAGE_KEY, JSON.stringify(data));
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(function () {
+        showToast("Share link copied to clipboard.");
+        $("fallback").classList.remove("show");
+      }).catch(function () {
+        showFallback(link);
+        showToast("Clipboard blocked. Copy the link below.");
+      });
+    } else {
+      showFallback(link);
+      showToast("Clipboard unavailable. Copy the link below.");
+    }
+  }
+
+  /* ---------- events ---------- */
+  function bind() {
+    var ids = ["fName", "fFrom", "fMessage", "fDob", "fTheme", "fMode", "fFinal"];
+    for (var i = 0; i < ids.length; i++) {
+      var el = $(ids[i]);
+      el.addEventListener("input", updatePreview);
+      el.addEventListener("change", updatePreview);
+    }
+
+    $("addPage").addEventListener("click", function () {
+      var cur = collect().pages;
+      cur.push("");
+      renderPages(cur);
+    });
+
+    $("addFav").addEventListener("click", function () {
+      var cur = collect().favorites;
+      cur.push({ label: "", text: "" });
+      renderFavorites(cur);
+    });
+
+    $("addTime").addEventListener("click", function () {
+      var cur = collect().timeline;
+      cur.push({ date: "", title: "", text: "" });
+      renderTimeline(cur);
+    });
+
+    $("btnOpen").addEventListener("click", function () {
+      var data = collect();
+      var ok = storageSet(STORAGE_KEY, JSON.stringify(data));
+      if (!ok) {
+        try {
+          location.href = buildShareLink(data);
+          return;
+        } catch (e) {
+          showToast("Storage is blocked in this browser.");
+          return;
+        }
+      }
+      location.href = buildShareLink(data);
+    });
+
+    $("btnCopy").addEventListener("click", copyLink);
+
+    $("btnReset").addEventListener("click", function () {
+      storageRemove(STORAGE_KEY);
+      fillForm(cloneDefaults());
+      $("fallback").classList.remove("show");
+      showToast("Reset to defaults.");
+    });
+  }
+
+  /* ---------- boot ---------- */
+  function boot() {
+    var storedRaw = storageGet(STORAGE_KEY);
+    var data = null;
+    if (storedRaw) {
+      try {
+        var parsed = JSON.parse(storedRaw);
+        if (parsed && typeof parsed === "object") data = normalize(parsed);
+      } catch (e) {
+        data = null;
+      }
+    }
+    if (!data) data = cloneDefaults();
+    fillForm(data);
+    bind();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+})();
+</script>
 </body>
 </html>
